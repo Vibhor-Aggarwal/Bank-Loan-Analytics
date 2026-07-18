@@ -4,7 +4,7 @@ print("=" * 50)
 print("BANK LOAN ANALYTICS PROJECT")
 print("=" * 50) 
 
-df = pd.read_csv("data/raw/loans_full_schema.csv")
+df = pd.read_csv("data/processed/cleaned_data.csv")
 print("\nData Loaded Successfully")
 print("Dataset Information : ")
 print(df.info())
@@ -51,3 +51,6 @@ print(categorical_columns)
 for column in categorical_columns:
     print(f"\n{column}")
     print(df[column].nunique())
+
+print(df["loan_amount"].max())
+print(df["annual_income"].value_counts())
