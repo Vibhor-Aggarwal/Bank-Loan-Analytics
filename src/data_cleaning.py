@@ -1,50 +1,58 @@
-import pandas as pd 
+import os
+import pandas as pd
 
-print("="*70)
-print("BANKING LOAN ANALYTICS : DATA CLEANING")
-print("="*70)
+print("=" * 70)
+print("LENDING CLUB LOAN DEFAULT PREDICTION : DATA CLEANING")
+print("=" * 70)
+
+
+def print_section(title):
+    """Print formatted section headings."""
+
+    print("\n" + "=" * 60)
+    print(title)
+    print("=" * 60)
+
 
 def load_data():
-    """Load the loan dataset"""
-    print("="*60)
-    print("Loading the dataset. . .")
-    print("="*60)
-    
-    df = pd.read_csv("data/raw/loans_full_schema.csv")
-    
-    print(f"\nData Loaded Successfully, Dataset shape: {df.shape}")
+    """Load the Lending Club dataset."""
+
+    print_section("LOADING DATASET")
+
+    df = pd.read_csv("data/raw/lending_club_loan_two.csv")
+
+    print(f"\nDataset Loaded Successfully")
+    print(f"Dataset Shape: {df.shape}")
+
     return df
 
 
 def check_duplicates(df):
-    """Check for duplicate rows and remove them if present."""
-    print("\n" + "="*60)
-    print("DUPLICATE CHECK")
-    print("="*60)
+    """Check for duplicate rows and remove them."""
+
+    print_section("DUPLICATE CHECK")
 
     duplicate_count = df.duplicated().sum()
 
     print(f"Duplicate Rows: {duplicate_count}")
 
-    if duplicate_count>0:
+    if duplicate_count > 0:
         df = df.drop_duplicates()
-        print("Duplicates removed successfully")
+        print("Duplicates removed successfully.")
     else:
-        print("No duplicate rows found")
+        print("No duplicate rows found.")
 
     return df
 
 
 def generate_missing_value_report(df):
-    """Generate and save a missing value report."""
+    """Generate and save missing value report."""
 
-    print("\n"+"="*60)
-    print("MISSING VALUE REPORT")
-    print("="*60)
+    print_section("MISSING VALUE REPORT")
 
     missing_report = pd.DataFrame({
-        "Missing Value":df.isnull().sum(),
-        "Percentage":(df.isnull().sum()/len(df))*100
+        "Missing Values": df.isnull().sum(),
+        "Percentage": (df.isnull().sum() / len(df)) * 100
     })
 
     missing_report = missing_report.sort_values(
@@ -54,110 +62,154 @@ def generate_missing_value_report(df):
 
     print(missing_report)
 
+    os.makedirs("reports", exist_ok=True)
+
     missing_report.to_csv(
         "reports/missing_value_report.csv",
         index=True
     )
 
-    print("\n Missing value report saved")
+    print("\nMissing Value Report Saved Successfully.")
+
     return missing_report
 
 
-def clean_employee_columns(df):
-    """Clean employee related columns"""
+def clean_dataset(df):
+    """Clean the Lending Club dataset."""
 
-    print("\n" + "="*60)
-    print("CLEANING EMPLOYEE COLUMNS")
-    print("="*60)
+    print_section("DATA CLEANING")
 
-    #Fill missing employee titles
+    # ----------------------------------------------------
+    # Remove unnecessary column
+    # ----------------------------------------------------
+
+    df = df.drop(columns=["title"])
+
+    print("Dropped column: title")
+
+    # ----------------------------------------------------
+    # Employee Title
+    # ----------------------------------------------------
+
     df["emp_title"] = df["emp_title"].fillna("Unknown")
 
-    #Fill missing employment length with mode
-    emp_length_mode = df["emp_length"].mode()[0]
-    df["emp_length"] = df["emp_length"].fillna(emp_length_mode)
+    print("Filled missing emp_title with 'Unknown'")
 
-    print("Employee columns cleaned")
+    # ----------------------------------------------------
+    # Employee Length
+    # ----------------------------------------------------
+
+    df["emp_length"] = (
+        df["emp_length"]
+        .str.replace("years", "", regex=False)
+        .str.replace("year", "", regex=False)
+        .str.replace("\\+", "", regex=True)
+        .str.replace("< 1", "0", regex=False)
+        .str.replace("n/a", "", regex=False)
+        .str.strip()
+    )
+
+    df["emp_length"] = pd.to_numeric(
+        df["emp_length"],
+        errors="coerce"
+    )
+
+    median_emp = df["emp_length"].median()
+
+    df["emp_length"] = df["emp_length"].fillna(median_emp)
+
+    print("Converted emp_length to numeric")
+
+    # ----------------------------------------------------
+    # Revolving Utilization
+    # ----------------------------------------------------
+
+    median_revol = df["revol_util"].median()
+
+    df["revol_util"] = df["revol_util"].fillna(
+        median_revol
+    )
+
+    print("Filled revol_util missing values")
+
+    # ----------------------------------------------------
+    # Public Bankruptcies
+    # ----------------------------------------------------
+
+    df["pub_rec_bankruptcies"] = (
+        df["pub_rec_bankruptcies"]
+        .fillna(0)
+    )
+
+    print("Filled pub_rec_bankruptcies with 0")
+
+    # ----------------------------------------------------
+    # Mortgage Accounts
+    # ----------------------------------------------------
+
+    median_mort = df["mort_acc"].median()
+
+    df["mort_acc"] = df["mort_acc"].fillna(
+        median_mort
+    )
+
+    print("Filled mort_acc missing values")
 
     return df
 
 
-def clean_remaining_columns(df):
-    """Clean the remaining columns with missing values."""
+def final_data_quality_check(df):
+    """Perform final data quality checks."""
 
-    print("\n" + "="*60)
-    print("CLEANING REMAINING COLUMNS")
-    print("="*60)
+    print_section("FINAL DATA QUALITY CHECK")
 
-     # Remove unnecessary index column
-    if "Unnamed: 0" in df.columns:
-        df = df.drop(columns=["Unnamed: 0"])
-        print("Unnamed: 0 column removed")
+    remaining_missing = df.isnull().sum()
+    remaining_missing = remaining_missing[
+        remaining_missing > 0
+    ]
+
+    if remaining_missing.empty:
+        print("No Remaining Missing Values.")
     else:
-        print("No unnecessary index column found")
+        print("Remaining Missing Values:")
+        print(remaining_missing)
 
-    #Fill missing count values
-    df["num_accounts_120d_past_due"] = df["num_accounts_120d_past_due"].fillna(0)
-
-    #fill debt to income with median
-    median_dti = df["debt_to_income"].median()
-    df["debt_to_income"] = df["debt_to_income"].fillna(median_dti)
-
-    print("Remaining columns cleaned")
-    return df
+    print(f"\nDataset Shape: {df.shape}")
+    print(f"Duplicate Rows: {df.duplicated().sum()}")
 
 
 def save_dataset(df):
-    """Save cleaned dataset"""
+    """Save cleaned dataset."""
 
-    print("\n" + "="*60)
-    print("\nSaving cleaned dataset . . .")
-    print("="*60)
+    print_section("SAVING CLEANED DATASET")
+
+    os.makedirs(
+        "data/processed",
+        exist_ok=True
+    )
 
     df.to_csv(
         "data/processed/cleaned_data.csv",
         index=False
     )
 
-    print("cleaned dataset saved")
-
-
-def final_data_quality_check(df):
-    """Perform final data quality checks"""
-
-    print("\n"+"="*60)
-    print("FINAL DATA QUALITY CHECK")
-    print("="*60)
-
-    remaining_missing = df.isnull().sum()
-    remaining_missing = remaining_missing[remaining_missing > 0]
-
-    if remaining_missing.empty:
-        print("no remaining missing values")
-    else:
-        print("Remaining missing values: ")
-        print(remaining_missing)
-
-    print(f"Dataset Shape: {df.shape}")
-    print(f"Duplicate Rows: {df.duplicated().sum()}")
+    print("Cleaned Dataset Saved Successfully.")
 
 
 def main():
+
     df = load_data()
 
     df = check_duplicates(df)
 
     generate_missing_value_report(df)
 
-    df = clean_employee_columns(df)
-
-    df = clean_remaining_columns(df)
-
-    save_dataset(df)
+    df = clean_dataset(df)
 
     final_data_quality_check(df)
 
-   
+    save_dataset(df)
+
 
 if __name__ == "__main__":
     main()

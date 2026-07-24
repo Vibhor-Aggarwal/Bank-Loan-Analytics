@@ -1,56 +1,16 @@
-import pandas as pd
+import pandas as pd 
 
-print("=" * 50)
-print("BANK LOAN ANALYTICS PROJECT")
-print("=" * 50) 
+df = pd.read_csv("data/raw/lending_club_loan_two.csv")
 
-df = pd.read_csv("data/processed/cleaned_data.csv")
-print("\nData Loaded Successfully")
-print("Dataset Information : ")
-print(df.info())
+df.info()
 
-print("\n" + "=" *50)
-print("MISSING VALUES")
-print("=" * 50)
-print(df.isnull().sum())
+df.head()
 
-missing_percentage = (df.isnull().sum()/len(df)) * 100
-print("=" *50)
-print("MISSING PERCENTAGE ")
-print("="*50)
-print(missing_percentage)
+df.describe(include="all")
 
-print("=" *60)
-print("STATISTICAL SUMMARY")
-print("="*60)
-print(df.describe())
+df.isnull().sum().sort_values(ascending=False)
 
-print("="*50)
-print("DATASET DIMENSIONS")
-print("="*50)
-rows, columns = df.shape
+df["loan_status"].value_counts()
 
-print(f"Total records : {rows}")
-print(f"Total Features : {columns}")
-
-
-print("="*60)
-print("DATATYPE COUNT")
-print("="*60)
-print(df.dtypes.value_counts())
-
-numerical_columns = df.select_dtypes(include=["int64", "float64"]).columns
-categorical_columns = df.select_dtypes(include=["object"]).columns
-
-print("\nnumerical columns")
-print(numerical_columns)
-
-print("\ncategorical columns")
-print(categorical_columns)
-
-for column in categorical_columns:
-    print(f"\n{column}")
-    print(df[column].nunique())
-
-print(df["loan_amount"].max())
-print(df["annual_income"].value_counts())
+print(df["loan_status"].value_counts())
+print(df.isnull().sum().sort_values(ascending=False))
