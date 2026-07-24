@@ -420,7 +420,7 @@ Computer Science Engineering (FinTech)
 
 Python | Data Analytics | Machine Learning
 
-GitHub: https://github.com/<your-username>
+GitHub: https://github.com/<Vibhor-Aggarwal>
 
 ---
 
